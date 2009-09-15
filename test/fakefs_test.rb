@@ -102,6 +102,17 @@ class FakeFSTest < Test::Unit::TestCase
     assert_equal 'Yada Yada', File.read(path)
   end
 
+  def test_open_with_write_clears_existing_file
+    path = '/path/to/file.txt'
+    File.open(path, 'w') do |f|
+      f << 'Yada Yada'
+    end
+    File.open(path, 'w') do |f|
+      f << 'Yada Yada'
+    end
+    assert_equal 'Yada Yada', File.read(path)
+  end
+
   def test_can_read_with_File_readlines
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
