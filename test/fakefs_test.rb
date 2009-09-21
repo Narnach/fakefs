@@ -221,6 +221,12 @@ class FakeFSTest < Test::Unit::TestCase
     #assert_equal ['/'], Dir['/']
   end
 
+  def test_dir_glob_handles_fnm_dotmach_flag
+    FileUtils.mkdir_p 'foo'
+    FileUtils.touch 'foo/.bar'
+    assert_equal %w[foo/. foo/.. foo/.bar], Dir.glob('test/*', File::FNM_DOTMATCH)
+  end
+
   def test_chdir_changes_directories_like_a_boss
     # I know memes!
     FileUtils.mkdir_p '/path'
