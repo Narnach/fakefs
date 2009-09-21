@@ -11,6 +11,7 @@ class FakeFSSafeTest < Test::Unit::TestCase
     path = '/path/to/file.txt'
 
     FakeFS do
+      FileUtils.mkdir_p('/path/to')
       File.open(path, 'w') { |f| f.write "Yatta!" }
       assert File.exists?(path)
     end

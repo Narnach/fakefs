@@ -77,6 +77,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_can_create_files
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.write "Yatta!"
@@ -86,6 +87,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_can_read_files_once_written
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.write "Yatta!"
@@ -95,6 +97,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_can_write_to_files
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f << 'Yada Yada'
@@ -115,13 +118,40 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_File_new_in_write_mode_writes_empty_file_immediately
-    path = '/file.txt'
+    FileUtils.mkdir_p('/path/to')
+    path = '/path/to/file.txt'
     assert !File.exists?(path), "test file should not exist yet"
     f = File.new(path, 'w')
     assert File.exists?(path), "test file should now exist"
   end
 
+  def test_File_new_errors_if_directory_above_it_does_not_exist
+    assert_raises(Errno::ENOENT) {
+      File.new('/path/to/file.txt', 'w')
+    }
+    assert_raises(Errno::ENOENT) {
+      File.new('/path/to/file.txt', 'r')
+    }
+
+    assert !File.exists?('/path/to/file.txt'), "file is not written to"
+
+    FileUtils.mkdir_p('/path/to')
+
+    assert_nothing_raised {
+      File.new('/path/to/file.txt', 'w')
+    }
+
+    assert_nothing_raised {
+      File.new('/path/to/file.txt', 'r')
+    }
+
+    assert File.exists?('/path/to/file.txt')
+
+    assert_equal "", File.read('/path/to/file.txt')
+  end
+
   def test_can_read_with_File_readlines
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.puts "Yatta!", "Gatta!"
@@ -132,6 +162,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_File_close_disallows_further_access
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     file = File.open(path, 'w')
     file.write 'Yada'
@@ -142,6 +173,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_can_read_from_file_objects
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.write "Yatta!"
@@ -157,6 +189,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_knows_files_are_files
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.write "Yatta!"
@@ -166,6 +199,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_knows_symlink_files_are_files
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f.write "Yatta!"

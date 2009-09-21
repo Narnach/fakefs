@@ -84,6 +84,8 @@ module FakeFS
 
     attr_reader :path
     def initialize(path, mode = nil)
+      dir = File.dirname(FileSystem.normalize_path(path))
+      raise Errno::ENOENT.new(path) unless File.directory?(dir)
       @path = path
       @mode = mode
       @file = FileSystem.find(path)
