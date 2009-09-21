@@ -103,6 +103,7 @@ class FakeFSTest < Test::Unit::TestCase
   end
 
   def test_open_with_write_clears_existing_file
+    FileUtils.mkdir_p('/path/to')
     path = '/path/to/file.txt'
     File.open(path, 'w') do |f|
       f << 'Yada Yada'
@@ -111,6 +112,13 @@ class FakeFSTest < Test::Unit::TestCase
       f << 'Yada Yada'
     end
     assert_equal 'Yada Yada', File.read(path)
+  end
+
+  def test_File_new_in_write_mode_writes_empty_file_immediately
+    path = '/file.txt'
+    assert !File.exists?(path), "test file should not exist yet"
+    f = File.new(path, 'w')
+    assert File.exists?(path), "test file should now exist"
   end
 
   def test_can_read_with_File_readlines

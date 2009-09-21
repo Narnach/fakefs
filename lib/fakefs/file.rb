@@ -62,11 +62,6 @@ module FakeFS
     end
 
     def self.open(path, mode='r')
-      if mode == 'w'
-        if old_file = FileSystem.find(path)
-          old_file.content = ''
-        end
-      end
       if block_given?
         yield new(path, mode)
       else
@@ -93,6 +88,12 @@ module FakeFS
       @mode = mode
       @file = FileSystem.find(path)
       @open = true
+      return unless mode == 'w'
+      if @file
+        @file.content = ''
+      else
+        @file = FileSystem.add(path, FakeFile.new)
+      end
     end
 
     def close
