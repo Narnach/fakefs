@@ -78,8 +78,16 @@ module FakeFS
       Dir.open(dirname) { |file| yield file }
     end
     
-    def self.glob(pattern)
-      [FileSystem.find(pattern) || []].flatten.map{|e| e.to_s}.sort
+    def self.glob(pattern, flags=nil)
+      files = [FileSystem.find(pattern) || []].flatten.map{|e| e.to_s}.sort
+      if flags == File::FNM_DOTMATCH
+        dirs = files.select { |file| File.directory?(file) }
+        files += dirs.map { |dir| %w[. ..].map { |suffix| File.join(dir, suffix) } }.flatten
+        files.sort!
+      else
+        files.reject! {|file| File.basename(file)[0,1] == '.'}
+      end
+      files
     end
 
     def self.mkdir(string, integer = 0)
