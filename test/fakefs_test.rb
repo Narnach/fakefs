@@ -228,6 +228,12 @@ class FakeFSTest < Test::Unit::TestCase
     #assert_equal ['/'], Dir['/']
   end
 
+  def test_dir_glob_handles_relative_paths
+    FileUtils.mkdir_p 'foo'
+    FileUtils.touch 'foo/bar'
+    assert_equal %w[foo/bar], Dir.glob('foo/*')
+  end
+
   def test_chdir_changes_directories_like_a_boss
     # I know memes!
     FileUtils.mkdir_p '/path'
