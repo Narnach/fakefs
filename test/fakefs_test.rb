@@ -25,6 +25,13 @@ class FakeFSTest < Test::Unit::TestCase
     FileUtils.mkdir_p("/path/to/dir")
     assert_kind_of FakeDir, FileSystem.fs['path']['to']['dir']
   end
+  
+  def test_can_delete_directories
+    FileUtils.mkdir_p("/path/to/dir")
+    FileUtils.rmdir("/path/to/dir")
+    assert File.exists?("/path/to/")
+    assert File.exists?("/path/to/dir") == false
+  end
 
   def test_knows_directories_exist
     FileUtils.mkdir_p(path = "/path/to/dir")
@@ -530,6 +537,282 @@ class FakeFSTest < Test::Unit::TestCase
     assert_raises(Errno::ENOENT) {
       FileUtils.touch(list)
     }
+  end
+
+  def test_extname
+    assert File.extname("test.doc") == ".doc"
+  end
+
+  # Directory tests
+  def test_new_directory
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    assert_nothing_raised {
+      Dir.new('/this/path/should/be/here')
+    }
+  end
+
+  def test_new_directory_does_not_work_if_dir_path_cannot_be_found
+    assert_raises(Errno::ENOENT) {
+      Dir.new('/this/path/should/not/be/here')
+    }
+  end
+
+  def test_directory_close
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    dir = Dir.new('/this/path/should/be/here')
+    assert dir.close.nil?
+
+    assert_raises(IOError) {
+      dir.each { |dir| dir }
+    }
+  end
+
+  def test_directory_each
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    yielded = []
+    dir.each do |dir|
+      yielded << dir
+    end
+    
+    assert yielded.size == test.size
+    test.each { |t| assert yielded.include?(t) }
+  end
+
+  def test_directory_path
+     FileUtils.mkdir_p('/this/path/should/be/here')
+     assert Dir.new('/this/path/should/be/here').path == '/this/path/should/be/here'
+  end
+
+  def test_directory_pos
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    assert dir.pos == 0
+    dir.read
+    assert dir.pos == 1
+    dir.read
+    assert dir.pos == 2
+    dir.read
+    assert dir.pos == 3
+    dir.read
+    assert dir.pos == 4
+    dir.read
+    assert dir.pos == 5
+  end
+
+  def test_directory_pos_assign
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    assert dir.pos == 0
+    dir.pos = 2
+    assert dir.pos == 2
+  end
+
+  def test_directory_read
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    assert dir.pos == 0
+    d = dir.read
+    assert dir.pos == 1
+    assert d == '.'
+    
+    d = dir.read
+    assert dir.pos == 2
+    assert d == '..'
+  end
+
+  def test_directory_read_past_length
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_not_nil d
+    d = dir.read
+    assert_nil d
+  end
+ 
+  def test_directory_rewind
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    d = dir.read
+    d = dir.read
+    assert dir.pos == 2
+    dir.rewind
+    assert dir.pos == 0
+  end
+
+  def test_directory_seek
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.new('/this/path/should/be/here')
+
+    d = dir.seek 1
+    puts d
+    assert d == '..'
+    assert dir.pos == 1
+  end
+
+  def test_directory_class_delete
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    Dir.delete('/this/path/should/be/here')
+    assert File.exists?('/this/path/should/be/here') == false
+  end
+
+  def test_directory_class_delete_does_not_act_on_non_empty_directory
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    assert_raises(SystemCallError) do 
+      Dir.delete('/this/path/should/be/here')
+    end
+  end
+
+  def test_directory_entries
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    yielded = Dir.entries('/this/path/should/be/here')
+    assert yielded.size == test.size
+    test.each { |t| assert yielded.include?(t) }
+  end
+
+  def test_directory_foreach
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    yielded = []
+    Dir.foreach('/this/path/should/be/here') do |dir|
+      yielded << dir
+    end
+    
+    assert yielded.size == test.size
+    test.each { |t| assert yielded.include?(t) }
+  end
+
+  def test_directory_mkdir
+    Dir.mkdir('/path')
+    assert File.exists?('/path')
+  end
+
+  def test_directory_mkdir_relative
+    FileUtils.mkdir_p('/new/root')
+    FileSystem.chdir('/new/root')
+    Dir.mkdir('path')
+    assert File.exists?('/new/root/path')
+  end
+
+  def test_directory_mkdir_not_recursive
+    assert_raises(Errno::ENOENT) do
+      Dir.mkdir('/path/does/not/exist')
+    end
+  end
+
+  def test_directory_open
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    dir = Dir.open('/this/path/should/be/here')
+    assert dir.path == '/this/path/should/be/here' 
+  end
+
+  def test_directory_open_block
+    test = ['.', '..', 'file_1', 'file_2', 'file_3', 'file_4', 'file_5' ]
+    
+    FileUtils.mkdir_p('/this/path/should/be/here')
+
+    test.each do |f|
+      FileUtils.touch("/this/path/should/be/here/#{f}")
+    end
+
+    yielded = []
+    Dir.open('/this/path/should/be/here') do |dir|
+      yielded << dir
+    end
+    
+    assert yielded.size == test.size
+    test.each { |t| assert yielded.include?(t) }
+  end
+
+  def test_tmpdir
+    assert Dir.tmpdir == "/tmp"
   end
 
   def here(fname)

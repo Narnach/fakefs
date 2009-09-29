@@ -6,9 +6,22 @@ module FakeFS
       FileSystem.add(path, FakeDir.new)
     end
 
+    def rmdir(list, options = {})
+      list = [ list ] unless list.is_a?(Array)
+      list.each do |l|
+        parent = l.split('/')
+        parent.pop
+        raise Errno::ENOENT, "No such file or directory - #{l}" unless parent.join == "" || FileSystem.find(parent.join('/'))
+        raise Errno::ENOENT, l unless FileSystem.find(l)
+        raise Errno::ENOTEMPTY, l unless FileSystem.find(l).values.empty?
+        rm(l)
+      end
+    end
+
     def rm(path)
       FileSystem.delete(path)
     end
+    
     alias_method :rm_rf, :rm
     alias_method :rm_r, :rm
 
